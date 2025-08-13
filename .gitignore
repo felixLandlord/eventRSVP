@@ -1,0 +1,16 @@
+**.DS_Store
+**.venv
+**venv
+**.env
+**__pycache__
+**/__pycache__
+**.python-version
+**.coverage
+**.pytest_cache
+
+
+**.coveragerc
+**htmlcov/
+**.htmlcov
+
+**uploads/

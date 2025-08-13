@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account Verified Successfully</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background: #673ab7;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+      .content {
+        padding: 20px;
+        background: #f9f9f9;
+      }
+      .footer {
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+      }
+      .badge {
+        display: inline-block;
+        background: #ede7f6;
+        color: #5e35b1;
+        padding: 8px 14px;
+        border-radius: 18px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Account Verified</h1>
+      </div>
+      <div class="content">
+        <h2>Hello {{first_name}},</h2>
+        <p class="badge">Your email has been verified</p>
+        <p>
+          Thank you for verifying your account. You now have full access to all
+          features of EventHub.
+        </p>
+      </div>
+      <div class="footer">
+        <p>&copy; 2025 EventHub. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

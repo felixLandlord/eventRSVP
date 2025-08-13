@@ -1,0 +1,60 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: eventhub_postgres
+    restart: always
+    ports:
+      - "5433:5432"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DATABASE"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eventhub_network
+
+  # PostgreSQL UI (PGADMIN)
+  pgadmin:
+    image: dpage/pgadmin4:8.10
+    container_name: eventhub_pgadmin
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@eventhub.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgres
+    networks:
+      - eventhub_network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: eventhub_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # - ./backend:/app
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+    env_file:
+      - ./backend/.env
+    networks:
+      - eventhub_network
+
+volumes:
+  postgres_data:
+
+networks:
+  eventhub_network:
+    driver: bridge

@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Reminder - EventHub</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background: #ff5722;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+      .content {
+        padding: 20px;
+        background: #f9f9f9;
+      }
+      .footer {
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+      }
+      .reminder-box {
+        background: #fff3e0;
+        border: 2px solid #ffcc02;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .event-details {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .event-details h3 {
+        color: #ff5722;
+        margin-top: 0;
+      }
+      .event-details ul {
+        list-style: none;
+        padding: 0;
+      }
+      .event-details li {
+        margin: 10px 0;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .event-details li:last-child {
+        border-bottom: none;
+      }
+      .highlight {
+        background: #ffeb3b;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📅 Event Reminder</h1>
+      </div>
+      <div class="content">
+        <h2>Hello {{first_name}},</h2>
+
+        <div class="reminder-box">
+          <h3>⏰ Don't Forget!</h3>
+          <p>
+            <strong>{{event_title}}</strong> is
+            <span class="highlight">happening soon!</span>
+          </p>
+        </div>
+
+        <p>
+          This is a friendly reminder about the upcoming event you've RSVP'd
+          for.
+        </p>
+
+        <div class="event-details">
+          <h3>📋 Event Details</h3>
+          <ul>
+            <li><strong>🎯 Event:</strong> {{event_title}}</li>
+            <li><strong>📅 Date & Time:</strong> {{event_date}}</li>
+            <li><strong>📍 Location:</strong> {{event_location}}</li>
+          </ul>
+        </div>
+
+        <p><strong>📋 Pre-event checklist:</strong></p>
+        <ul>
+          <li>✅ Mark your calendar</li>
+          <li>✅ Plan your route to the venue</li>
+          <li>✅ Bring a valid ID for check-in</li>
+          <li>✅ Arrive 15 minutes early</li>
+        </ul>
+
+        <p>
+          If you can no longer attend, please let us know as soon as possible.
+        </p>
+
+        <p>Looking forward to seeing you there!</p>
+
+        <p>Best regards,<br />The EventHub Team</p>
+      </div>
+      <div class="footer">
+        <p>&copy; 2025 EventHub. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>
