@@ -87,10 +87,91 @@ mutation MyMutation {
     userData: {
       name: "Felix"
       email: "felixnunoo9@gmail.com"
-      password: "123456789"
+      password: "A1s2d3f4g5"
     }
   )
 }
 ```
 
 ![register](./assets/register.png)
+
+**register email**:
+![register_email](./assets/register_email.png)
+
+2. Verify Email:
+
+```graphql
+mutation {
+  verifyEmail(verifyData: { email: "felixnunoo9@gmail.com", otp: "860320" }) {
+    message
+    success
+  }
+}
+```
+
+**success**:
+![verify_email_success](./assets/verify_email_success.png)
+
+**failure**:
+![verify_email_failure](./assets/verify_email_failure.png)
+
+3. Login:
+
+```graphql
+mutation {
+  login(loginData: { email: "felixnunoo9@gmail.com", password: "A1s2d3f4g5" }) {
+    accessToken
+    refreshToken
+    user {
+      id
+      name
+      email
+      role
+    }
+  }
+}
+```
+
+![login](./assets/login.png)
+
+4. Create Event:
+
+```graphql
+mutation MyMutation {
+  createEvent(
+    eventData: {
+      title: "boom"
+      description: "we keep booming"
+      category: OTHER
+      location: "boom arena"
+      startDate: "2025-09-01T09:00:00Z"
+      endDate: "2025-09-01T09:00:00Z"
+    }
+  ) {
+    id
+    attendeeCount
+    category
+    createdAt
+    description
+    endDate
+    isFree
+    location
+    maxAttendees
+    organizerId
+    startDate
+    status
+    timezone
+    title
+    venueAddress
+  }
+}
+```
+
+![create_event](./assets/create_event.png)
+
+```
+{
+  "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZWxpeG51bm9vOUBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU1MTE1OTgyfQ.Y9ei7UUasWTyxWSIJHXwqMlqkv6zX1P8JjysSKgxQ3Y"
+}
+
+```
