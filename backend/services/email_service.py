@@ -1,8 +1,8 @@
-import smtplib
+import aiosmtplib
+import asyncio
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional
-import asyncio
+from typing import Optional, Tuple
 from jinja2 import Template
 from pathlib import Path
 
@@ -12,8 +12,9 @@ from backend.repository.event_repository import EventRepository
 
 
 class EmailService:
-    # TEMPLATE_DIR = Path("templates/emails")
     TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates" / "emails"
+    MAX_RETRIES = 3
+    RETRY_DELAY = 1  # seconds
 
     @staticmethod
     def _load_template(template_name: str) -> Optional[Template]:
@@ -28,36 +29,47 @@ class EmailService:
             return None
 
     @staticmethod
+    def _create_message(to_email: str, subject: str, body: str, is_html: bool) -> MIMEMultipart:
+        """Create email message with proper headers and content"""
+        msg = MIMEMultipart("alternative")
+        msg["From"] = settings.SMTP_FROM_EMAIL
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "html" if is_html else "plain"))
+        return msg
+
+    @staticmethod
     async def send_email(
         to_email: str, subject: str, body: str, is_html: bool = False
-    ) -> bool:
-        """Send email using SMTP"""
-        try:
-            if not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
-                print("Email credentials not configured")
-                return False
+    ) -> Tuple[bool, Optional[str]]:
+        """Send email using async SMTP"""
+        if not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
+            return False, "Email credentials not configured"
 
-            msg = MIMEMultipart("alternative")
-            msg["From"] = settings.SMTP_FROM_EMAIL
-            msg["To"] = to_email
-            msg["Subject"] = subject
-
-            msg.attach(MIMEText(body, "html" if is_html else "plain"))
-
-            def send_smtp():
-                server = smtplib.SMTP_SSL(settings.SMTP_SERVER, settings.SMTP_PORT)
-                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                text = msg.as_string()
-                server.sendmail(settings.SMTP_USERNAME, to_email, text)
-                server.quit()
-
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, send_smtp)
-
-            return True
-        except Exception as e:
-            print(f"Failed to send email: {e}")
-            return False
+        msg = EmailService._create_message(to_email, subject, body, is_html)
+        
+        for attempt in range(EmailService.MAX_RETRIES):
+            try:
+                smtp = aiosmtplib.SMTP(hostname=settings.SMTP_SERVER, 
+                                     port=settings.SMTP_PORT, 
+                                     use_tls=True)
+                
+                await smtp.connect()
+                await smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+                await smtp.send_message(msg)
+                await smtp.quit()
+                
+                return True, None
+                
+            except aiosmtplib.SMTPException as e:
+                error_msg = f"SMTP error on attempt {attempt + 1}: {str(e)}"
+                if attempt < EmailService.MAX_RETRIES - 1:
+                    await asyncio.sleep(EmailService.RETRY_DELAY * (2 ** attempt))
+                    continue
+                return False, error_msg
+                
+            except Exception as e:
+                return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
     async def send_account_created(user_id: int) -> bool:
@@ -73,9 +85,10 @@ class EmailService:
         subject = "Welcome to EventHub!"
         html_body = template.render(first_name=user.name, email=user.email)
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_account_deleted(user_id: int, recovery_link: str) -> bool:
@@ -91,9 +104,10 @@ class EmailService:
         subject = "Account Deleted - EventHub"
         html_body = template.render(first_name=user.name, recovery_link=recovery_link)
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_account_updated(user_id: int, email_changed: bool = False) -> bool:
@@ -120,9 +134,10 @@ class EmailService:
             first_name=user.name, email_changed_block=email_changed_block
         )
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_account_verified(user_id: int) -> bool:
@@ -138,9 +153,10 @@ class EmailService:
         subject = "Account Verified Successfully - EventHub"
         html_body = template.render(first_name=user.name)
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_email_otp(user_id: int, otp: str) -> bool:
@@ -156,9 +172,10 @@ class EmailService:
         subject = "Email Verification OTP - EventHub"
         html_body = template.render(first_name=user.name, otp=otp)
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_forgot_password(user_id: int, otp: str) -> bool:
@@ -174,9 +191,10 @@ class EmailService:
         subject = "Password Reset Request - EventHub"
         html_body = template.render(first_name=user.name, otp=otp)
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_password_reset(user_id: int) -> bool:
@@ -192,9 +210,10 @@ class EmailService:
         subject = "Password Reset Successful - EventHub"
         html_body = template.render(first_name=user.name)
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_rsvp_confirmation(user_id: int, event_id: int) -> bool:
@@ -218,9 +237,10 @@ class EmailService:
             event_description=event.description,
         )
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
 
     @staticmethod
     async def send_event_reminder(user_id: int, event_id: int) -> bool:
@@ -243,6 +263,7 @@ class EmailService:
             event_location=event.location,
         )
 
-        return await EmailService.send_email(
+        success, _ = await EmailService.send_email(
             user.email, subject, html_body, is_html=True
         )
+        return success
