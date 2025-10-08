@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
 from backend.models.base_model import Base
 from backend.core.config import settings
 from tenacity import retry, stop_after_attempt, wait_fixed
+from backend.core.exceptions import DatabaseError, DB_CODES
 
 DATABASE_URL: str = (
     f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
@@ -27,11 +28,17 @@ class DatabaseSession:
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     async def create_all(self):
         async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            try:
+                await conn.run_sync(Base.metadata.create_all)
+            except Exception as e:
+                raise DatabaseError(message="Database schema creation failed", code=DB_CODES["CONNECTION_ERROR"], original_error=e)
 
     async def drop_all(self):
         async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+            try:
+                await conn.run_sync(Base.metadata.drop_all)
+            except Exception as e:
+                raise DatabaseError(message="Database schema drop failed", code=DB_CODES["CONNECTION_ERROR"], original_error=e)
 
     async def close(self):
         await self.engine.dispose()
@@ -46,11 +53,13 @@ class DatabaseSession:
     async def commit_rollback(self):
         try:
             await self.session.commit()
-        except Exception:
+        except Exception as e:
             await self.session.rollback()
-            raise
+            raise DatabaseError(message="Transaction commit failed", code=DB_CODES["TRANSACTION_ERROR"], original_error=e)
 
 
 db: DatabaseSession = DatabaseSession()
 
 async_session: async_sessionmaker = db.SessionLocal
+
+# Add: TransactionManager and with_transaction decorator according to plan

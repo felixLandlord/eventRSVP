@@ -2,8 +2,9 @@ from typing import Optional
 from fastapi import Request
 from backend.services.auth_service import AuthService
 from backend.graphql_api.types import UserType
-from jwt import PyJWTError as JWTError
+from jwt import PyJWTError as JWTError, ExpiredSignatureError
 from backend.core.logger import get_logger
+from backend.core.exceptions import AuthenticationError, AUTH_CODES
 
 logger = get_logger("graphql_context")
 
@@ -24,9 +25,14 @@ async def get_context_value(request: Request):
         token = auth_header.split(" ", 1)[1]
         try:
             current_user = await AuthService.get_current_user(token)
+        except ExpiredSignatureError:
+            logger.warning("Expired token")
+            raise AuthenticationError(message="Expired or invalid token", code=AUTH_CODES["TOKEN_EXPIRED"])
         except JWTError as e:
             logger.warning(f"Invalid token: {str(e)}")
+            raise AuthenticationError(message="Expired or invalid token", code=AUTH_CODES["INVALID_TOKEN"])
         except Exception as e:
             logger.error(f"Context error: {str(e)}")
+            raise AuthenticationError(message="Unexpected error", code=AUTH_CODES["INVALID_TOKEN"])
 
     return {"request": request, "token": token, "current_user": current_user}
