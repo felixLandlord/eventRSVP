@@ -86,6 +86,23 @@ class EventCheckInSummaryType:
     checkin_percentage: float
 
 
+@strawberry.type
+class FeedbackType:
+    id: int
+    event_id: int
+    user_id: int
+    rating: int
+    comment: Optional[str]
+    created_at: datetime
+
+
+@strawberry.type
+class EventFeedbackSummaryType:
+    average_rating: float
+    feedback_count: int
+    comments: List[FeedbackType]
+
+
 # Input Types
 @strawberry.input
 class RegisterInput:
@@ -164,7 +181,14 @@ class ResendOTPInput:
     email: str
 
 
-# @strawberry.type
-# class MessageResponse:
-#     message: str
-#     success: bool
+@strawberry.input
+class FeedbackInput:
+    event_id: int
+    rating: int
+    comment: Optional[str]
+
+    # Validation for the rating field
+    @strawberry.field
+    def validate_rating(self) -> None:
+        if not 1 <= self.rating <= 5:
+            raise ValueError("Rating must be between 1 and 5")

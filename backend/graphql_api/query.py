@@ -3,11 +3,13 @@ import strawberry
 
 from backend.services.event_service import EventService
 from backend.services.rsvp_service import RSVPService
+from backend.services.feedback_service import FeedbackService
 from backend.graphql_api.types import (
     EventType,
     RSVPType,
     UserType,
     EventCheckInSummaryType,
+    EventFeedbackSummaryType
 )
 from backend.permissions.auth_permissions import IsAuthenticated, IsOrganizer
 
@@ -59,3 +61,8 @@ class Query:
         user = info.context["current_user"]
         data = await EventService.get_event_analytics(event_id, user.id)
         return EventCheckInSummaryType(**data)
+
+    @strawberry.field(permission_classes=[IsOrganizer])
+    async def get_event_feedback(self, info, event_id: int) -> EventFeedbackSummaryType:
+        user = info.context["current_user"]
+        return await FeedbackService.get_event_feedback(event_id)

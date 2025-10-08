@@ -3,6 +3,7 @@ import strawberry
 from backend.services.auth_service import AuthService
 from backend.services.event_service import EventService
 from backend.services.rsvp_service import RSVPService
+from backend.services.feedback_service import FeedbackService
 from backend.graphql_api.types import (
     AuthType,
     EventType,
@@ -16,6 +17,8 @@ from backend.graphql_api.types import (
     ResetPasswordInput,
     ChangePasswordInput,
     ResendOTPInput,
+    FeedbackInput,
+    FeedbackType
 )
 from backend.permissions.auth_permissions import IsAuthenticated
 from typing import Optional
@@ -105,3 +108,8 @@ class Mutation:
 
         user = info.context["current_user"]
         return await RSVPService.check_in_attendee(decoded_data["user_id"], user.id)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def submit_feedback(self, info, feedback_data: FeedbackInput) -> FeedbackType:
+        user = info.context["current_user"]
+        return await FeedbackService.submit_feedback(feedback_data, user.id)
