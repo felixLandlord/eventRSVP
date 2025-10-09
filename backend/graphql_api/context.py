@@ -2,10 +2,23 @@ from typing import Optional
 from fastapi import Request
 from backend.services.auth_service import AuthService
 from backend.graphql_api.types import UserType
-from jwt import PyJWTError as JWTError
+from jwt import PyJWTError as JWTError, ExpiredSignatureError
 from backend.core.logger import get_logger
+from backend.core.errors import AuthenticationError
 
 logger = get_logger("graphql_context")
+
+
+class GraphQLAuthenticationError(Exception):
+    """Custom exception class for GraphQL authentication errors"""
+    def __init__(self, message: str, code: str = "AUTHENTICATION_ERROR"):
+        super().__init__(message)
+        self.message = message
+        self.code = code
+        self.extensions = {
+            "code": code,
+            "category": "authentication"
+        }
 
 
 async def get_context_value(request: Request):
@@ -15,6 +28,9 @@ async def get_context_value(request: Request):
     - Extracts Bearer token from Authorization header
     - Validates token and fetches current user
     - Injects `token` and `current_user` into context
+    
+    Raises:
+        GraphQLAuthenticationError: When token validation fails
     """
     token: Optional[str] = None
     current_user: Optional[UserType] = None
@@ -24,9 +40,23 @@ async def get_context_value(request: Request):
         token = auth_header.split(" ", 1)[1]
         try:
             current_user = await AuthService.get_current_user(token)
+        except ExpiredSignatureError as e:
+            logger.warning(f"Token expired: {str(e)}")
+            raise GraphQLAuthenticationError(
+                message="Authentication token has expired",
+                code="TOKEN_EXPIRED"
+            )
         except JWTError as e:
             logger.warning(f"Invalid token: {str(e)}")
+            raise GraphQLAuthenticationError(
+                message="Invalid authentication token",
+                code="INVALID_TOKEN"
+            )
         except Exception as e:
             logger.error(f"Context error: {str(e)}")
+            raise GraphQLAuthenticationError(
+                message="Authentication failed",
+                code="AUTHENTICATION_ERROR"
+            )
 
     return {"request": request, "token": token, "current_user": current_user}
